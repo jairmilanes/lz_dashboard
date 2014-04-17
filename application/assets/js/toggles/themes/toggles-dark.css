@@ -1,0 +1,42 @@
+.toggle-slide {
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  direction: ltr;
+}
+.toggle-slide .toggle-on,.toggle-slide .toggle-off,.toggle-slide .toggle-blob {
+    float: left;
+}
+.toggle-slide .toggle-blob {
+    position: relative;
+    z-index: 99;
+    cursor: hand;
+    cursor: grab;
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+}
+
+.toggle-dark .toggle-slide {
+  /* border-radius: 5px; */
+}
+.toggle-dark .toggle-slide .toggle-on,.toggle-dark .toggle-slide .toggle-off,.toggle-dark .toggle-slide .toggle-blob {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+}
+.toggle-dark .toggle-slide .toggle-on, .toggle-dark .toggle-select .toggle-inner .active {
+  background: #32C9D9;
+}
+.toggle-dark .toggle-slide .toggle-off, .toggle-dark .toggle-select .toggle-on {
+  background: #666;
+}
+.toggle-dark .toggle-slide .toggle-blob {
+  background: #444;
+}
+.toggle-dark .toggle-slide .toggle-blob:hover {
+  background: #444;
+}
