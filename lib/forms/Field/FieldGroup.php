@@ -22,7 +22,6 @@ class FieldGroup extends Field
         	$field = $this->getCloseTag();
         } else {
         	$field = $this->getOpenTag($name, $group);
-        	$field .= $this->getTitleTag();
         }
 
         return array(
@@ -33,12 +32,10 @@ class FieldGroup extends Field
         );
     }
     
-    protected function getTitleTag(){
-    	return '<legend>'.$this->group_title.'</legend>';
-    }
-	
     protected function getOpenTag($name, $group){
-    	return '<fieldset class="group_'.$group.'_'.$name.' open"><div class="fieldset_inner">';
+    	return '<fieldset data-group="'.$group.'" class="'.$name.' open">'.
+    			  '<legend>'.$this->group_title.'<a title="'._m('Toggle group','lz_dashboard').'" href="#"><span class="icon-plus"></span></a></legend>'.
+    			  '<div class="fieldset_inner">';
     }
     
     protected function getCloseTag(){

@@ -4,7 +4,7 @@
  ******************************************************/
 $method = '';
 $action = strtolower(Params::getParam('do'));
-$plugin = Params::getParam('lz_mod');
+$plugin = Params::getParam('plugin');
 
 if( empty($action)){
 	$action = 'dashboard';
@@ -16,31 +16,15 @@ if( preg_match('/\//', $action)){
 	$method = $parts[1];
 }
 
-if( !empty($plugin) ){
-	$controller = osc_plugin_path($plugin.'/').'controller/'.$action.'.php';
-} else {
-	$controller = LZ_DASHBOARD_CONTROLLER_PATH.$action.'.php';
-}
-
-if( file_exists($controller) ){
-
-	require $controller;
-	
-	$className = 'LzDashboard';
-	if( $action !== 'dashboard' ){
-		if( !empty($plugin) ){
-			$className = implode('', array_map( 'ucfirst', explode('_', $plugin) ) );
-		}
-		$className .= ucfirst($action);
-	}
-	
-	if( class_exists($className)){
-		$controller = new $className();
-	
+$controller = lz_dashboard_get_action( $action, $plugin );
+if( !empty($controller)){
+	try {
 		if( !empty($method)){
 			$controller->$method();
 		} else {
 			$controller->index();
 		}
-	}
+	} catch( Exception $e ) {}
+} else {
+	die('Invalid request!');
 }

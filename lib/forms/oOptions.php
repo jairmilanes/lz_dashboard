@@ -12,7 +12,6 @@ class oOptions {
 	// db data
 	protected $data;
 	
-	
 	//protected static $instance;
 	
 	/**

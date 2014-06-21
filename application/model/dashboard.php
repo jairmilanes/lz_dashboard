@@ -8,21 +8,28 @@ class LZDashboardDashboardModel extends LZModel {
 		parent::__construct();
 	}
 
-	
+	public function getPluginData($plugin){
+		$dbdata = osc_get_preference( $plugin, 'lz_dashboard' );
+		if( false !== $dbdata ){
+			return unserialize($dbdata);
+		}
+		return false;
+	}
 	
 	public function get_plugins(){
 		$results = array();
-		$plugins =  Preference::newInstance()->findBySection('lz_plugins');
-		if( !empty($plugins) ){
-			foreach( $plugins as $plugin ){
-				$value = unserialize($plugin['s_value']);
-				$results[$plugin['s_name']] = array(
-						'name' => $value['plugin_title'],
-						'shortname' => $value['plugin_name'],
-						'path' => osc_plugin_path( osc_plugin_folder($value['plugin_name'].'/index.php') )
+		$s_plugins =  Preference::newInstance()->get('lz_plugins', 'lz_dashboard');
+		if( !empty($s_plugins) ){
+			$plugins = unserialize($s_plugins);
+			foreach( $plugins as $name => $plugin ){
+				$results[$name] = array(
+						'name' => $plugin,
+						'shortname' => $name,
+						'path' => osc_plugin_path( osc_plugin_folder($name.'/index.php') )
 				);
-				if( file_exists(osc_plugin_path( osc_plugin_folder($value['plugin_name'].'/index.php') ).'assets/img/dashboard.png') ){
-					$results[$plugin['s_name']]['icon'] = osc_plugin_url($value['plugin_name'].'/index.php').'assets/img/dashboard.png';
+				$icon = osc_plugin_path( osc_plugin_folder($plugin.'/index.php') ).'assets/img/dashboard.png';
+				if( file_exists($icon) ){
+					$results[$name]['icon'] = $icon;
 				}
 			}
 		}

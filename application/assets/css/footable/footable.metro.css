@@ -2,8 +2,7 @@
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
-  border: 3px solid #52b9e9;
-  font-family: "Open Sans", Arial, Helvetica, sans-serif;
+  border: 0;
   color: #444444;
   background: #efefef;
   -moz-border-radius: 0;
@@ -48,11 +47,9 @@
 }
 .footable > thead > tr > th,
 .footable > thead > tr > td {
-  background-color: #52b9e9;
-  border: 1px solid #52b9e9;
-  color: #ffffff;
-  border-top: none;
-  border-left: none;
+
+  color: #666;
+  border: 0;
   font-weight: normal;
 }
 .footable > thead > tr > th.footable-first-column,
@@ -61,8 +58,6 @@
 }
 .footable > tfoot > tr > th,
 .footable > tfoot > tr > td {
-  background-color: #52b9e9;
-  border: 1px solid #52b9e9;
   color: #ffffff;
   border-top: none;
   border-left: none;

@@ -2,68 +2,50 @@
 class LzDashboard extends LzController {
 
 	public function __construct(){
-		parent::__construct();
+		parent::__construct('lz_dashboard');
 		$this->setTitle('LzDashboard');
-		
 	}
 
 	public function index(){
 		$this->setTitle('Lz Dashboard / home');
 		
-		$model = $this->load_model('dashboard');
+		$model = $this->load()->model('dashboard', true);
 		$plugins = $model->get_plugins();
-		
+
 		$this->addData('plugins', $plugins);
 		
-		$this->render('dashboard');
+		$this->render('dashboard', true);
 	}
+	
+	
 	
 	public function save(){
 		
 		if( !Params::existParam('plugin') || !Params::existParam('name') ){
 			die( json_encode( array('status' => false, 'message' => _m('Plugin or form not found!', 'lz_dashboard') ) ) );
 		}
+		
 		$this->setPlugin( Params::getParam('plugin') );
-		$forms = $this->loadForm( Params::getParam('name') );
+		$params 	= Params::getParam('lzds');
 		
-		$groups = $forms->getFields();
-		$params = Params::getParam('lzds');
+		$form_name  = Params::getParam('name');
+		$form_group = Params::getParam('group');
+		$form 		= $this->load()->form_by_name( $form_name, $form_group );
 		
-		$data   = array();
+		$data = array();
 		$errors = array();
 		
-		foreach( $groups as $parent => $fields ){
-			
-			$form = $forms->getSubForm($parent);
-			$name = $form->getName();
-			$group = $form->getGroup();
-
-			if( isset($params[$parent]) ){
-				$pars = array_filter( $params[$parent] );
-
-				if( !empty($pars) ){
-					$isValid = $form->validate( array( $name => $pars ), true );
-					
-					if(!$isValid){
-						$errors[$parent] = $form->getErrors();
-					} else {
-						if( !empty($group) ){
-							if( !isset($data[$group])){
-								$data[$group] = array();
-							}
-							$data[$group][$parent] = $isValid;
-						} else {
-							$data[$parent] = $isValid;
-							
-						}
-					}
-				}
+		if(false == $form){
+			$errors['form'] = _m('Error: Form not found!', 'lz_dashboard');
+		} else {
+			if( !empty($form->subforms)){
+				$rs     = $this->load()->helper('form')->process($form->subforms, $params);
+				$data   = $rs['valid_data'];
+				$errors = $rs['errors'];	
 			}
-			
 		}
 		
 		if( count($errors) == 0 ){
-		
 			$form_data = serialize( $data );
 			$status = osc_set_preference( $this->plugin, $form_data, 'lz_dashboard', 'STRING' );
 		
@@ -72,10 +54,8 @@ class LzDashboard extends LzController {
 			array('status' => true, 'message' => _m('Success: Settings updated!', 'lz_dashboard') );
 		
 			die( json_encode( $message ) );
-			
 		}
 		
 		die( json_encode( array('status' => false, 'message' => _m('There were some errors in the form.', 'lz_dashboard'), 'errors' => $errors ) ) );
-
 	}
 }

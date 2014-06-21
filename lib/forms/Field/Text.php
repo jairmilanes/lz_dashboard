@@ -28,6 +28,7 @@ class Text extends Field
             $this->content = $attributes['content'];
         }
         $this->attributes = $attributes;
+        //printR( $this->attributes, true);
     }
 
     public function attributeString()

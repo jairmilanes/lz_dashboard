@@ -24,7 +24,10 @@ class PluginPage extends Field {
 		$html = '';
 		ob_start();
 		\Params::setParam('do', $this->attributes['do']);
-		\Params::setParam('lz_mod', $this->attributes['plugin']);
+		\Params::setParam('plugin', $this->attributes['plugin']);
+		if( $this->attributes['listen'] ){
+			\Params::setParam('listen', $this->attributes['listen']);
+		}
 		osc_run_hook('ajax_admin_lzds');
 		$html .= ob_get_contents();
 		ob_end_clean();

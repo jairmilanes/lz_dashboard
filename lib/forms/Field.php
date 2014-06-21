@@ -14,6 +14,8 @@ abstract class Field
     );
     
     protected $form;
+    protected $disabled;
+    protected $readonly;
     protected $default;
     protected $description;
 

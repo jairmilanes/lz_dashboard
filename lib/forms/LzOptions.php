@@ -11,13 +11,20 @@ use Lib\LZDashboardForm;
 
 class LzOptions {
 	
-	// main form
+	// Forms
+	protected $forms;
+	// Active form
 	protected $form;
-	// plugin
+	// Plugin name
 	protected $plugin;
-	// plugin options
+	// Plugin options
 	protected $options;
+	// Menu structure
+	protected $menu;
 	
+	protected $errors;
+	
+	protected $defaults;
 	/**
 	 * Options constructor
 	 * 
@@ -25,40 +32,53 @@ class LzOptions {
 	 * @return LzOptions
 	 */
 	public function __construct( $plugin, $options ){
-		$this->form = array();
+		$this->forms = array();
 		$this->plugin = $plugin;
 		$this->options = new oOptions;
-		$this->options->setData($this->getData());
-		
+		$this->data = $this->getData();
+		$this->defaults = array();
+		//$this->options->setData($this->getData());
+		$this->menu  = new stdClass();
+		$this->errors = array();
 		return $this->prepare($options);
-	}
-	
-	protected function getData(){
-		if(empty($this->plugin)){
-			throw new Exception('Plugin not found!');
-		}
-		
-		$data = osc_get_preference($this->plugin, 'lz_dashboard');
-		
-		if(!empty($data)){
-			$data = unserialize($data);
-		}
-		
-		if(is_object($data)){
-			return json_decode(json_encode($data), true);
-		}
-		
-		return $data;
 	}
 
 	/**
 	 * Prepares the hole form
 	 */
 	public function prepare($options){
-		foreach( $options as $group => $options ){
-			$this->organize($group, $options);
+		foreach( $options as $group => $option ){
+			$this->organize($group, $option);
+			$this->forms[$group] = $this->form;
+			$this->form = null;
 		}
+		$this->prepareMenu($options);
 		return $this;
+	}
+	
+	/**
+	 * Prepares tab menu structure
+	 * 
+	 * @param array $options
+	 * @return boolean
+	 */
+	protected function prepareMenu($options){
+		foreach( $options as $name => $option ){
+			if( !isset($this->menu->$name)){
+				$this->menu->$name = new stdClass();
+				$this->menu->$name->title = $option['title'];
+				$this->menu->$name->description = $option['description'];
+			}
+			if( $option['type'] == 'menu_group' ){
+				$this->menu->$name->submenus = new stdClass();
+				foreach( $option['groups'] as $group => $option ){
+					$this->menu->$name->submenus->$group = new stdClass();
+					$this->menu->$name->submenus->$group->title = $option['title'];
+					$this->menu->$name->submenus->$group->description = $option['description'];
+				}
+			}
+		}
+		return true;
 	}
 	
 	/**
@@ -73,9 +93,14 @@ class LzOptions {
 				$this->prepareMenuGroup($group, $options);
 				break;
 			case 'group':
-				var_dump($group);
 				$this->form = $this->getForm($group);
-				$fields = $this->prepareGroup($group, $options);
+				if( isset($options['action']) ){
+					$this->form->setDo($options['action']);
+				}
+				if( isset($options['trigger']) && !empty($options['trigger']) ){
+					$this->form->setTrigger($options['trigger']);
+				}
+				$this->prepareGroup($group, $options);
 				break;
 		}
 		return true;
@@ -90,13 +115,24 @@ class LzOptions {
 	 */
 	protected function prepareMenuGroup($group, array $options){
 		$subforms = array();
+		if( isset($this->defaults[$group])){
+			$this->defaults[$group] = array();
+		}
 		foreach( $options['groups'] as $form => $opts ){
 			$this->form = $this->getForm($form);
 			$this->prepareGroup($form, $opts);
-			
 			$subforms[$form] = $this->form;
+			
+			$this->defaults[$group][$form] = $this->defaults[$form];
+			unset($this->defaults[$form]);
 		}
 		$this->form = $this->getForm($group);
+		if( isset($options['action']) && !empty($options['action']) ){
+			$this->form->setDo($options['action']);
+		}
+		if( isset($options['trigger']) && !empty($options['trigger']) ){
+			$this->form->setTrigger($options['trigger']);
+		}
 		$this->form->addSubForms($subforms);
 		return true;
 	}
@@ -111,11 +147,30 @@ class LzOptions {
 	protected function prepareGroup($group, array $options){
 		$fields = array();
 		foreach( $options['fields'] as $name => $opts ){
+			
+			if( isset($opts['default']) && !empty($opts['default'])){
+				if( !isset( $this->defaults[$group] )){
+					$this->defaults[$group] = array();
+				}
+				$this->defaults[$group][$name] = $opts['default'];
+			}
+			
 			switch( $opts['type'] ){
 				case 'fieldGroup':
-					$this->form->newSubForm($name);
+					$this->form->newSubGroup($name);
+					
+					$opts['options']['action'] = 'open';
+					$field = $this->prepareField($name, $opts);
+					$this->form->addSubGroupField($name, 'open_group_'.$name, $field);
+					
 					$fdls = $this->prepareFieldGroup($name, $opts);
-					$this->form->addSubFormFields($name, $fdls);
+					$this->form->addSubGroupFields($name, $fdls);
+					
+					$opts['options']['action'] = 'close';
+					$field = $this->prepareField($name, $opts);
+					$this->form->addSubGroupField($name, 'close_group_'.$name, $field);
+					
+					
 					break;
 				default: 
 					$fields[$name] = $this->prepareField($name, $opts);
@@ -169,6 +224,7 @@ class LzOptions {
 			}
 			
 		}
+		
 		return $field_instance;
 	}
 	
@@ -227,6 +283,9 @@ class LzOptions {
 			case 'fieldGroup':
 				$method = 'setOptionTypeFieldGroup';
 				break;
+			case 'hidden':
+				$method = 'setOptionTypeHidden';
+				break;
 		}
 		return $method;
 	}
@@ -245,6 +304,8 @@ class LzOptions {
 			'id'			=> 'field_'.strtolower( $title ),
 			'class' 		=> 'text_field '.@$attributes['class'],
 			'required' 		=> @$attributes['required'],
+			'disabled' 		=> @$attributes['disabled'],
+			'readonly' 		=> @$attributes['readonly'],
 			'label'			=> @$attributes['label'],
 			'max_length' 	=> @$attributes['max_length'],
 			'min_length' 	=> @$attributes['min_length'],
@@ -260,9 +321,9 @@ class LzOptions {
 	 * @param string $title
 	 * @param array $data
 	 */
-	protected function setOptionTypeColorpicker( $type, $title, array $attributes ){
-		$data['id'] = 'colorpicker_id'; // id of the field * only used internally
-		$data['class'] = 'colorpicker colorpicker_class'; // class of the field * only used internally
+	protected function setOptionTypeColorpicker( $type, $title, array $attributes ){	
+		$attributes['id'] = 'colorpicker_id'; // id of the field * only used internally
+		$attributes['class'] = 'colorpicker colorpicker_class'; // class of the field * only used internally
 		return $this->setOptionTypeText( 'text', $title, $attributes );
 	}
 	
@@ -322,6 +383,8 @@ class LzOptions {
 			'id'			=> 'field_'.strtolower( $title ),
 			'class' 		=> 'options_field '.@$attributes['class'],
 			'required' 		=> @$attributes['required'],
+			'disabled' 		=> @$attributes['disabled'],
+			'readonly' 		=> @$attributes['readonly'],
 			'label'			=> @$attributes['label'],
 			'false_values'  => array(),
 			'value'			=> @$attributes['value'],
@@ -343,7 +406,8 @@ class LzOptions {
 			'id'			=> 'field_'.strtolower( $title ),
 			'class' 		=> 'plugin_page '.$title,
 			'plugin'		=> $attributes['plugin'],
-			'do'			=> $attributes['do']
+			'do'			=> $attributes['do'],
+			'listen'		=> @$attributes['listen']
 		));
 	}
 	
@@ -378,6 +442,75 @@ class LzOptions {
 	}
 	
 	/**
+	 * Creates a hidden field
+	 *
+	 * @param string $type
+	 * @param string $title
+	 * @param array $attributes
+	 * @param string $group_slug
+	 * @param string $group_parent
+	 */
+	protected function setOptionTypeHidden( $type, $title, array $attributes ){
+		return $this->form->createField( $title, $type, array(
+				'id'			=> 'field_'.strtolower( $title ),
+				'class' 		=> 'hidden_field',
+				'required'		=> @$attributes['required']
+		));
+	}
+	
+	public function validate($params){
+		$loader = LzLoaderHelper::newInstance($this->plugin);
+		$rs = $loader->helper('form', true)->process($this->getForms(), $params);
+		if( !empty($rs['errors'])){
+			$this->errors = $rs['errors'];
+			return false;
+		}
+		return $rs['valid_data'];
+	}
+	
+	public function getErrors(){
+		return $this->errors;
+	}
+	
+	/**
+	 * Return current data array
+	 * 
+	 * @throws Exception
+	 * @return array
+	 */
+	protected function getData(){
+		if(empty($this->plugin)){
+			throw new Exception('Plugin not found!');
+		}
+	
+		$data = osc_get_preference($this->plugin, 'lz_dashboard');
+	
+		if(!empty($data)){
+			$data = unserialize($data);
+		}
+	
+		if(is_object($data)){
+			return json_decode(json_encode($data), true);
+		}
+	
+		return $data;
+	}
+	
+	public function setData($data){
+		$this->data = $data;
+		return $this;
+	}
+	
+	/**
+	 * Gets current tabs structure
+	 * 
+	 * @return stdClass
+	 */
+	public function getMenu(){
+		return $this->menu;
+	}
+	
+	/**
 	 * Render the form fields given it´s name
 	 *
 	 * @param string $field Name of the field
@@ -393,6 +526,13 @@ class LzOptions {
 		return $form->renderRow($field);
 	}
 	
+	/**
+	 * Render multiple fields
+	 * 
+	 * @param array $fields
+	 * @param string $group
+	 * @param string $menu_group
+	 */
 	public function renderFields( $fields, $group, $menu_group = null ){
 		foreach(  $fields as $par => $field ){
 			// we are in a group
@@ -419,12 +559,35 @@ class LzOptions {
 		if( !empty($menu_group)){
 			$g = $menu_group;
 		}
-		
-		return new Lib\LZDashboardForm($g);
+		$form = new Lib\LZDashboardForm($g);
+		if( isset($this->data[$group])){
+			$form->addData( $this->data[$group] );
+		}
+		return $form;
 	}
 	
-	protected function setActiveForm(){
-		
+	/**
+	 * Gets all forms
+	 * 
+	 * @return array
+	 */
+	public function getForms(){
+		return $this->forms;
+	}
+	
+	public function setForms($forms){
+		$this->forms = $forms;
+		return $this;
+	}
+	
+	/**
+	 * Gets a specific form by group
+	 * 
+	 * @param string $group
+	 * @return boolean|LZDashboardForm
+	 */
+	public function getFormByGroup($group){
+		return (isset($this->forms[$group])? $this->forms[$group] : false);
 	}
 	
 	/**
@@ -450,4 +613,10 @@ class LzOptions {
 		return $this->options->getDataGroup($group, $menu_group);
 	}
 
+	/**
+	 * Gets current plugin name
+	 */
+	public function getPlugin(){
+		return $this->plugin;
+	}
 }

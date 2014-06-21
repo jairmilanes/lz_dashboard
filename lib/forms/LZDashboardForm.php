@@ -32,14 +32,24 @@ require LZ_DASHBOARD_FORMS_PATH.'Formats/table.php';
 class LZDashboardForm
 {
 	protected $name = 'lzds';
-    protected $action, $method, $submit_value, $fields, $sticky, $format, $message_type, $multiple_errors, $html5;
+	protected $group;
+    protected $action;
+    protected $do;
+    protected $method;
+    protected $submit_value;
+    protected $fields;
+    protected $sticky;
+    protected $format;
+    protected $message_type;
+    protected $multiple_errors;
+    protected $html5;
     protected $valid = true;
-    
-    protected $group;
+    protected $trigger;
     protected $messages = array();
     
     public $subforms = array();
-    // protected $data = array();
+    public $subgroups= array();
+    protected $data = array();
     /*
     protected $formats
         = array(
@@ -95,7 +105,7 @@ class LZDashboardForm
         $message_type = 'list',
         $multiple_errors = false
     ) {
-    	$this->name = $name;
+    	$this->group = $name;
     	$this->base_path = dirname(__FILE__) . DIRECTORY_SEPARATOR;
         $this->fields = new \stdClass();
         $this->action = $action;
@@ -142,7 +152,35 @@ class LZDashboardForm
     }
     */
     
+    public function setDo($do){
+    	$this->do = $do;
+    	return $this;
+    }
     
+    public function getDo(){
+    	return $this->do;
+    }
+    
+    public function hasDo(){
+    	return ( empty($this->do ) ? false : true );
+    }
+    
+    public function getAction(){
+    	return $this->action;
+    }
+    
+    public function setTrigger($trigger){
+    	$this->trigger = $trigger;
+    	return $this;
+    }
+    
+	public function getTrigger(){
+    	return $this->trigger;
+    }
+   
+    public function hasTrigger(){
+    	return ( empty($this->trigger ) ? false : true );
+    }
 
     /**
      * Add a field to the form instance
@@ -195,6 +233,36 @@ class LZDashboardForm
     public function addSubFormFields($subform, $fields){
     	foreach($fields as $field_name => $field ){
     		$this->addSubFormField($subform, $field_name, $field);
+    	}
+    	return true;
+    }
+    
+    
+    public function &newSubGroup($name){
+    	$this->subgroups[$name] = new self($name);
+    	return $this->subgroups[$name];
+    }
+    
+    public function addSubGroup($name, $subform){
+    	$this->subgroups[$name] = $subform;
+    	return true;
+    }
+    
+    public function addSubGroups($subforms){
+    	foreach( $subforms as $name => $subform ){
+    		$this->addSubGroup($name, $subform);
+    	}
+    	return true;
+    }
+    
+    public function addSubGroupField($subform, $field_name, $field){
+    	$this->subgroups[$subform]->addField($field_name, $field);
+    	return true;
+    }
+    
+    public function addSubGroupFields($subform, $fields){
+    	foreach($fields as $field_name => $field ){
+    		$this->addSubGroupField($subform, $field_name, $field);
     	}
     	return true;
     }
@@ -282,12 +350,13 @@ class LZDashboardForm
     public function getGroup(){
     	return $this->group;
     }
-    /*
+
     /**
      * Add data to populate the form
      *
      * @param array $data
      *
+     **/
     public function addData(array $data){
         $this->data = array_merge($this->data, $data);
     }
@@ -295,7 +364,7 @@ class LZDashboardForm
     public function getData(){
     	return $this->data;
     }
-    */
+    
 
     /**
      * Validate the submitted form
@@ -309,13 +378,13 @@ class LZDashboardForm
         	$request = strtoupper($this->method) == 'POST' ? $_POST : $_GET;
     	}
 
-        if (isset($request[$this->name])) {
-            $form_data = $request[$this->name];
+        if (isset($request[$this->group])) {
+            $form_data = $request[$this->group];
         } else {
             $this->valid = false;
             return false;
         }
-        
+
         if ($this->sticky) {
             $this->addData($form_data);
         }
@@ -326,11 +395,10 @@ class LZDashboardForm
                     ? $form_data[$key] : (isset($_FILES[$this->name][$key]) ? $_FILES[$this->name][$key] : '' ) ) ) ) {
 
                 $this->valid = false;
-                return false;
             }
         }
         
-        return ( false !== $returnData )? $form_data : $this->valid;
+        return ( false !== $returnData && $this->valid )? $form_data : $this->valid;
     }
     
     /**
@@ -497,6 +565,7 @@ FORM;
     {
     	$row_string = '';
     	switch( $this->fields->$name->field_type ){
+    		case 'hidden':
     		case 'fieldGroup':
     			$row_string .= 		$this->renderField($name);
     			break;
@@ -509,8 +578,9 @@ FORM;
     			$row_string .= '<div class="form-group '.$this->fields->$name->field_type.'">';
     			$row_string .= 		'<div class="form-label">'.$this->renderLabel($name).'</div>';
     			$row_string .= 		'<div class="form-controls">'.$this->renderField($name);
-    			if( isset( $this->descriptions[$name] ) ){
-    				$row_string .=   	'<p class="description" data-field="'.osc_esc_html($name).'">'.osc_esc_html($this->descriptions[$name]).'</p>';
+    			$desc = $this->fields->$name->getDescription();
+    			if( !empty($desc) ){
+    				$row_string .=   	'<p class="description" data-field="'.osc_esc_html($name).'">'.osc_esc_html($desc).'</p>';
     			}
     			$row_string .= 			'<p class="error">'.$this->renderError($name).'</p>';
     			$row_string .= 		'</div>';
@@ -520,6 +590,28 @@ FORM;
     	}
         return $row_string;
     }
+    
+    public function renderRows($rows){
+    	$html = '';
+    	foreach( $rows as $f_name => $f_options){
+    		$html .= $this->renderRow($f_name);
+    	}
+    	return $html;
+    }
+    
+    public function renderGroup(){
+    	$html = '';
+    	$html .= $this->renderRows($this->fields);
+    	
+    	if( !empty($this->subgroups ) ){
+    		foreach( $this->subgroups as $form ){
+    			$html .= $form->renderRows($form->fields);
+    		}
+    	}
+    	
+    	return $html;
+    }
+    
 
     /**
      * Returns HTML for all hidden fields including crsf protection
