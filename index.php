@@ -27,8 +27,8 @@ define('LZ_DASHBOARD_MODEL_PATH', LZ_DASHBOARD_APP_PATH.'model/' );
 define('LZ_DASHBOARD_VIEW_PATH',  LZ_DASHBOARD_APP_PATH.'view/' );
 define('LZ_DASHBOARD_CONTROLLER_PATH',  LZ_DASHBOARD_APP_PATH.'controller/' );
 
-define( 'LZ_DASHBOARD_UPLOAD_PATH', UPLOADS_PATH.'lz_dashboard/' );
-define( 'LZ_DASHBOARD_UPLOAD_THUMB_PATH', LZ_DASHBOARD_UPLOAD_PATH.'thumbnails/' );
+define('LZ_DASHBOARD_UPLOAD_PATH', UPLOADS_PATH.'lz_dashboard/' );
+define('LZ_DASHBOARD_UPLOAD_THUMB_PATH', LZ_DASHBOARD_UPLOAD_PATH.'thumbnails/' );
 
 define('LZ_DASHBOARD_BASE_URL',   osc_plugin_url(osc_plugin_folder(__FILE__).'application/index.php') );
 define('LZ_DASHBOARD_ASSETS_URL', LZ_DASHBOARD_BASE_URL.'assets/');
@@ -37,15 +37,17 @@ require LZ_DASHBOARD_CORE_PATH.'lz_controller.php';
 require LZ_DASHBOARD_CORE_PATH.'lz_helper.php';
 require LZ_DASHBOARD_CORE_PATH.'lz_model.php';
 require LZ_DASHBOARD_CORE_PATH.'lz_object.php';
+require LZ_DASHBOARD_CORE_PATH.'lz_autoloader.php';
 //require LZ_DASHBOARD_FORMS_PATH.'form_builder.php';
 require LZ_DASHBOARD_LIB_PATH."helpers/upload.helper.php";
 
+LzAutoloader::init();
 /*******************************************************
  * ROUTES
 ******************************************************/
-osc_add_route('lz_dashboard/index', 'lz_dashboard/index', 'lz_dashboard/index', osc_plugin_folder(__FILE__).'application/index.php');
-
-
+osc_add_route('lz_dashboard/index', 'lz_dashboard/index', 'lz_dashboard/index', osc_plugin_folder(__FILE__).'application/index.php', false );
+osc_add_route('lz_dashboard/do', 'lz/do/([^/]+)/([/]+)/(.+)', 'lz/do/{plugin}/{do}/{params}', osc_plugin_folder(__FILE__).'application/index.php', false);
+osc_add_route('lz_dashboard/user/do', 'lz/user/do/([^/]+)/(.*)/(.*)', 'lz/user/do/{plugin}/{do}/{params}', osc_plugin_folder(__FILE__).'application/index.php', true);
 /********************************************************************************
  * CORE HOOKS
  *******************************************************************************/
@@ -139,6 +141,22 @@ function lz_dashboard_do($action, $plugin, $params = array()){
 	return false;
 }
 
+function lz_dashboard_do_url($plugin, $do, $params = '', $user_menu = false){
+	
+	$par = array();
+	$par['plugin'] 	= $plugin;
+	$par['do'] 		= $do;
+	$par['params'] 	= $params;
+	
+	$route = 'lz_dashboard/do';
+	if($user_menu){
+		$route = 'lz_dashboard/user/do';
+	}
+	
+	return osc_route_url($route, $par );
+	
+}
+
 function lz_dashboard_url($do, $plugin, $params = array()){
 	$url = osc_ajax_hook_url('lzds', array('&do'=>$do,'plugin'=>$plugin));
 	if( !empty($params)){
@@ -148,30 +166,15 @@ function lz_dashboard_url($do, $plugin, $params = array()){
 }
 
 function lz_dashboard_get_action( $action, $plugin ){
-
-	if( !empty($plugin) ){
-		$controller = osc_plugin_path($plugin.'/').'controller/'.$action.'.php';
-	} else {
-		$controller = LZ_DASHBOARD_CONTROLLER_PATH.$action.'.php';
-	}
-	
-	if( file_exists($controller) ){
-	
-		$className = 'LzDashboard';
-		if( $action !== 'dashboard' ){
-			if( !empty($plugin) ){
-				$className = implode('', array_map( 'ucfirst', explode('_', $plugin) ) );
-			}
-			$className .= ucfirst($action);
+	$className = 'LzDashboard';
+	if( $plugin !== 'lz_dashboard' ){
+		if( !empty($plugin) ){
+			$className = implode('', array_map( 'ucfirst', explode('_', $plugin) ) );
 		}
-	
-		if( !class_exists($className)){
-			require $controller;
-		}
-		
-		return new $className();
+		$className .= ucfirst($action);
 	}
-	return false;
+	$className .= 'Controller';
+	return new $className();
 }
 
 
@@ -295,7 +298,7 @@ function lz_is_dashboard_page(){
  * Configure LZ Dashboard
  */
 function lz_dashboard_configure(){
-	osc_redirect_to(osc_route_admin_url(LZ_DASHBOARD_SHORTNAME.'/index'));
+	osc_redirect_to(osc_route_admin_url( LZ_DASHBOARD_SHORTNAME.'/index') );
 }
 
 function lz_dashboard_admin_menu_init(){
@@ -329,12 +332,24 @@ if( !function_exists('printR')){
 	
 }
 
-function toObject($d) {
+function lz_get_time_diff($date, $date_from = 'now'){
+	$now = new DateTime($date_from);
+	$expire = new DateTime($date);
+	return $now->diff($expire);
+}
+
+function lz_to_object($d) {
 	if (is_array($d)) {
 		return (object) array_map(__FUNCTION__, $d);
 	}else {
 		return $d;
 	}
+}
+
+function lz_is_date($date, $format = 'Y-m-d H:i:s')
+{
+	$d = DateTime::createFromFormat($format, $date);
+	return $d && $d->format($format) == $date;
 }
 
 osc_add_hook( 'admin_menu_init', 						'lz_dashboard_admin_menu_init');

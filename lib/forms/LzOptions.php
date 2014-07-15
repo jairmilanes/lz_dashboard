@@ -459,7 +459,7 @@ class LzOptions {
 	}
 	
 	public function validate($params){
-		$loader = LzLoaderHelper::newInstance($this->plugin);
+		$loader = LzDashboardLoaderHelper::newInstance($this->plugin);
 		$rs = $loader->helper('form', true)->process($this->getForms(), $params);
 		if( !empty($rs['errors'])){
 			$this->errors = $rs['errors'];

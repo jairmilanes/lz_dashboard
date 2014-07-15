@@ -11,7 +11,7 @@ class LZModel extends DAO {
 
 	public function __construct( $options = array() ){
 		parent::__construct();
-		$this->logger = LzLoaderHelper::newInstance(Session::newInstance()->_get('plugin'))->helper('log', true);
+		$this->logger = LzDashboardLoaderHelper::newInstance(Session::newInstance()->_get('plugin'))->helper('log', true);
 		$this->logger->setDebug(true);
 		return $this;
 	}

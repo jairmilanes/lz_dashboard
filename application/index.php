@@ -6,6 +6,24 @@ $method = '';
 $action = strtolower(Params::getParam('do'));
 $plugin = Params::getParam('plugin');
 
+if( Params::existParam('route')
+	&& ( Params::getParam('route') == 'lz_dashboard/do'
+		|| Params::getParam('route') == 'lz_dashboard/user/do') ){
+	
+	$action = implode('/', explode('-',$action));
+
+	$params = Params::getParam('params');
+	
+	if( strlen($params) > 0){
+		$pr = array_map(function($e){
+			$rs = explode('_',$e);
+			Params::setParam($rs[0], $rs[1]); 
+			return $rs;
+		}, explode('-', $params) );
+		unset($_REQUEST['params']);
+	}
+} 
+
 if( empty($action)){
 	$action = 'dashboard';
 }
@@ -17,6 +35,7 @@ if( preg_match('/\//', $action)){
 }
 
 $controller = lz_dashboard_get_action( $action, $plugin );
+
 if( !empty($controller)){
 	try {
 		if( !empty($method)){
@@ -26,5 +45,6 @@ if( !empty($controller)){
 		}
 	} catch( Exception $e ) {}
 } else {
-	die('Invalid request!');
+	http_response_code(404);
+	die('Page not found!');
 }

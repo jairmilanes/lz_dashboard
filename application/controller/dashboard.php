@@ -1,5 +1,5 @@
 <?php
-class LzDashboard extends LzController {
+class LzDashboardDashboardController extends LzController {
 
 	public function __construct(){
 		parent::__construct('lz_dashboard');

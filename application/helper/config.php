@@ -1,5 +1,5 @@
 <?php
-class LzConfigHelper extends LzHelper {
+class LzDashboardConfigHelper extends LzHelper {
 	
 	private $config;
 	

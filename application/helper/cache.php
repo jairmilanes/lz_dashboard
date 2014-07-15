@@ -1,5 +1,5 @@
 <?php
-class LzCacheHelper extends LzHelper {
+class LzDashboardCacheHelper extends LzHelper {
 	
 	private $cache;
 	

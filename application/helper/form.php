@@ -1,5 +1,5 @@
 <?php
-class LzFormHelper extends LzHelper {
+class LzDashboardFormHelper extends LzHelper {
 	
 	public function __construct($plugin, $loader = null){
 		parent::__construct($plugin, $loader);

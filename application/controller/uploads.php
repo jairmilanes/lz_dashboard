@@ -1,5 +1,5 @@
 <?php
-class LzDashboardUploads extends LzController {
+class LzDashboardUploadsController extends LzController {
 
 	protected $helper;
 	

@@ -4,14 +4,14 @@
  * 
  * @author Jair Milanes Junior | LayoutzWeb
  */
-class LzLoaderHelper extends LzHelper {
+class LzDashboardLoaderHelper extends LzHelper {
 
 	/**
-	 * LzLoaderHelper class construct
+	 * LzDashboardLoaderHelper class construct
 	 * 
 	 * @param string $plugin
 	 * @param string $loader
-	 * @return LzLoaderHelper
+	 * @return LzDashboardLoaderHelper
 	 */
 	public function __construct($plugin, $loader = null) {
 		parent::__construct($plugin, $loader);
@@ -19,12 +19,12 @@ class LzLoaderHelper extends LzHelper {
 	}
 	
 	/**
-	 * It creates a new LzLoaderHelper object class ir if it has been created
+	 * It creates a new LzDashboardLoaderHelper object class ir if it has been created
 	 * before, it return the previous object
 	 *
 	 * @access public
 	 * @since 3.0
-	 * @return LzLoaderHelper
+	 * @return LzDashboardLoaderHelper
 	 */
 	public static function newInstance($plugin){
 		if( !self::$instance instanceof self ) {
@@ -40,16 +40,13 @@ class LzLoaderHelper extends LzHelper {
 	 * @return boolean
 	 */
 	public function helper($name, $ignore_plugin = false){
-		$filename = $name.'.php';
-		$path = LZ_DASHBOARD_APP_PATH.'helpers/'.$filename;
+		$name = implode('', array_map( 'ucfirst', explode('_', $name) ) );
+		$classname = 'LzDashboard';
 		if( !empty($this->plugin) && !$ignore_plugin ){
-			$path = osc_plugin_path( $this->plugin.'/' ).'helpers/'.$filename;
+			$classname = implode('', array_map( 'ucfirst', explode('_', $this->plugin) ) );
 		}
-		$classname = 'Lz'.ucfirst(strtolower($name)).'Helper';
-		if( file_exists($path) ){
-			if( !class_exists($classname) ){
-				require_once $path;
-			}
+		$classname = $classname.ucfirst(strtolower($name)).'Helper';
+		if( class_exists($classname, true) ){
 			return $classname::newInstance($this->plugin, $this );
 		}
 		return false;
@@ -62,24 +59,37 @@ class LzLoaderHelper extends LzHelper {
 	 * @return LzModel|boolean
 	 */
 	public function model($name, $ignore_plugin = false){
-		
-		$path = LZ_DASHBOARD_MODEL_PATH;
-
+		$classname = 'LzDashboard';
 		if( !empty($this->plugin) && !$ignore_plugin ){
-			$path = osc_plugin_path( $this->plugin.'/' ).'model/';
+			$classname = implode('', array_map( 'ucfirst', explode('_', $this->plugin) ) );
 		}
-
-		if( file_exists($path.$name.'.php') ){
-			$classname = 'LzDashboard';
-			if( !empty($this->plugin) && !$ignore_plugin ){
-				$classname = implode('', array_map( 'ucfirst', explode('_', $this->plugin) ) );
-			} 
-			$classname .= ucfirst($name).'Model';
-
-			if( !class_exists($classname)){
-				require $path.$name.'.php';
-			}
+		$name = implode('', array_map( 'ucfirst', explode('_', $name) ) );
+		$classname .= ucfirst($name).'Model';
+		if( class_exists($classname, true) ){
 			return new $classname;
+		}
+		return false;
+	}
+	
+	/**
+	 * Loads a specific object
+	 *
+	 * @param string $filename
+	 * @param string $classname
+	 * @param boolean $ignore_plugin
+	 * @return object|boolean
+	 */
+	public function object($classname, $params = array(), $ignore_plugin = false){
+		$class = 'o';
+		if( !empty($this->plugin) 
+				&& !$ignore_plugin ){
+			$class .= implode('', array_map( 'ucfirst', explode('_', $this->plugin) ) );
+		} else {
+			$class .= 'LzDashboard';
+		}
+		$class .= ucfirst(strtolower($classname));
+		if( class_exists($class, true)){
+			return new $class($params);
 		}
 		return false;
 	}
@@ -150,31 +160,5 @@ class LzLoaderHelper extends LzHelper {
 		}
 		return false;
 	}
-	
-	/**
-	 * Loads a specific object
-	 * 
-	 * @param string $filename
-	 * @param string $classname
-	 * @param boolean $ignore_plugin
-	 * @return object|boolean
-	 */
-	public function object($classname, $params = array(), $ignore_plugin = false){
-		$name = strtolower($name);
 
-		$plugin = 'lz_dashboard/application';
-		if( !$ignore_plugin ){
-			$plugin = $this->plugin;
-		}
-		$path = osc_plugin_path($plugin.'/objects/').$classname.'.php';
-
-		if(file_exists($path)){
-			if( !class_exists($classname) ){
-				require_once $path;
-			}
-			return new $classname($params);
-		}
-		return false;
-	}
-	
 }

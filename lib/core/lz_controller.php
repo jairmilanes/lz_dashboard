@@ -52,14 +52,21 @@ class LzController {
 	 * Controller class constructor
 	 */
 	public function __construct($plugin){
-		require_once LZ_DASHBOARD_APP_PATH.'helpers/loader.php';
+		require_once LZ_DASHBOARD_APP_PATH.'helper/loader.php';
 		$this->data   = array();
 		$this->plugin = $plugin;
-		$this->config = $this->load()->helper('config', true);
+		
+		$this->load();
+		
+		
+		//var_dump($this->load()->helper('config', true));exit;
+		
+		$this->config = $this->loader->helper('config', true);
+
+		$this->logger = $this->loader->helper('log', true);
+		$this->logger->setDebug($this->debug);
 		
 		Session::newInstance()->_set('plugin', $this->plugin);
-		$this->logger = LzLoaderHelper::newInstance($this->plugin)->helper('log', true);
-		$this->logger->setDebug($this->debug);
 		return true;
 	}
 
@@ -146,11 +153,11 @@ class LzController {
 	/**
 	 * Loader method to load models, forms and helpers
 	 *
-	 * @return LzLoaderHelper
+	 * @return LzDashboardLoaderHelper
 	 */
 	protected function load(){
-		if( !$this->loader instanceof LzLoaderHelper){
-			$this->loader = LzLoaderHelper::newInstance($this->plugin);
+		if( !$this->loader instanceof LzDashboardLoaderHelper){
+			$this->loader = LzDashboardLoaderHelper::newInstance($this->plugin);
 		}
 		return $this->loader;
 	}

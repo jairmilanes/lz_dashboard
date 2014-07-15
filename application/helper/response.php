@@ -5,7 +5,7 @@
  * @author Jair Milanes Junior
  *
  */
-class LzResponseHelper extends LzHelper {
+class LzDashboardResponseHelper extends LzHelper {
 	
 	/**
 	 * Valid response codes
@@ -271,7 +271,7 @@ class LzResponseHelper extends LzHelper {
 	 */
 	protected function toObject($d) {
 		if (is_array($d)) {
-			return (object) array_map(__FUNCTION__, $d);
+			return (object) array_map(array($this, __FUNCTION__), $d);
 		}else {
 			return $d;
 		}

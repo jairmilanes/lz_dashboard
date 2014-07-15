@@ -1,5 +1,5 @@
 <?php
-class LzLogHelper extends LzHelper {
+class LzDashboardLogHelper extends LzHelper {
 	
 	const TEMPLATE = '[{type}][{group}]|{time}|{message}';
 	
