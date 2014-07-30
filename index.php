@@ -33,15 +33,21 @@ define('LZ_DASHBOARD_UPLOAD_THUMB_PATH', LZ_DASHBOARD_UPLOAD_PATH.'thumbnails/' 
 define('LZ_DASHBOARD_BASE_URL',   osc_plugin_url(osc_plugin_folder(__FILE__).'application/index.php') );
 define('LZ_DASHBOARD_ASSETS_URL', LZ_DASHBOARD_BASE_URL.'assets/');
 
+if( !class_exists('LzAutoloader')){
+	require LZ_DASHBOARD_CORE_PATH.'lz_autoloader.php';
+	LzAutoloader::init();
+}
+
 require LZ_DASHBOARD_CORE_PATH.'lz_controller.php';
 require LZ_DASHBOARD_CORE_PATH.'lz_helper.php';
 require LZ_DASHBOARD_CORE_PATH.'lz_model.php';
 require LZ_DASHBOARD_CORE_PATH.'lz_object.php';
-require LZ_DASHBOARD_CORE_PATH.'lz_autoloader.php';
 //require LZ_DASHBOARD_FORMS_PATH.'form_builder.php';
 require LZ_DASHBOARD_LIB_PATH."helpers/upload.helper.php";
 
-LzAutoloader::init();
+
+
+
 /*******************************************************
  * ROUTES
 ******************************************************/
@@ -142,7 +148,6 @@ function lz_dashboard_do($action, $plugin, $params = array()){
 }
 
 function lz_dashboard_do_url($plugin, $do, $params = '', $user_menu = false){
-	
 	$par = array();
 	$par['plugin'] 	= $plugin;
 	$par['do'] 		= $do;
@@ -152,9 +157,7 @@ function lz_dashboard_do_url($plugin, $do, $params = '', $user_menu = false){
 	if($user_menu){
 		$route = 'lz_dashboard/user/do';
 	}
-	
 	return osc_route_url($route, $par );
-	
 }
 
 function lz_dashboard_url($do, $plugin, $params = array()){
@@ -232,7 +235,6 @@ function lz_dashboard_register( $name, $sql_file = '' ){
 	$current_data = serialize($current_data);
 	
 	if( osc_set_preference( 'lz_plugins', $current_data, 'lz_dashboard' ) ){
-	
 		if( !empty($sql_file)){
 			$connection = DBConnectionClass::newInstance() ;
 			$var 		= $connection->getOsclassDb();
@@ -243,13 +245,10 @@ function lz_dashboard_register( $name, $sql_file = '' ){
 			if( !$conn->importSQL($sql) ){
 				throw new Exception( $conn->getErrorLevel().' - '.$conn->getErrorDesc() ) ;
 			}
-		}
-		
+		}	
 		return true;
 	}
-
 	return false;
-	
 }
 
 function lz_get_plugin_path($name){
@@ -323,6 +322,9 @@ function lz_dashboard_admin_menu_init(){
 	}
 }
 
+/**
+ * Enhanced print_r function
+ */
 if( !function_exists('printR')){
 	function printR( $data, $exit = false ){
 		echo'<pre>'.print_r($data, true ).'</pre>';
@@ -331,27 +333,51 @@ if( !function_exists('printR')){
 	}
 	
 }
-
-function lz_get_time_diff($date, $date_from = 'now'){
-	$now = new DateTime($date_from);
-	$expire = new DateTime($date);
-	return $now->diff($expire);
-}
-
-function lz_to_object($d) {
-	if (is_array($d)) {
-		return (object) array_map(__FUNCTION__, $d);
-	}else {
-		return $d;
+if( !function_exists('osc_truncate_words')){
+	function osc_truncate_words($string,$max=20,$trail = ''){
+		$len = strlen($string);
+		if( $len > $max ){
+			$tok=strtok($string,' ');
+			$string='';
+			while($tok!==false && strlen($string)<$max)
+			{
+				if (strlen($string)+strlen($tok)<=$max)
+					$string.=$tok.' ';
+				else
+					break;
+				$tok=strtok(' ');
+			}
+			if( '' == $trail ){
+				$trail = '...';
+			}
+				
+		}
+		return trim($string).$trail;
 	}
 }
-
-function lz_is_date($date, $format = 'Y-m-d H:i:s')
-{
-	$d = DateTime::createFromFormat($format, $date);
-	return $d && $d->format($format) == $date;
+if( !function_exists('lz_get_time_diff')){
+	function lz_get_time_diff($date, $date_from = 'now'){
+		$now = new DateTime($date_from);
+		$expire = new DateTime($date);
+		return $now->diff($expire);
+	}
 }
-
+if( !function_exists('lz_to_object')){
+	function lz_to_object($d) {
+		if (is_array($d)) {
+			return (object) array_map(__FUNCTION__, $d);
+		}else {
+			return $d;
+		}
+	}
+}
+if( !function_exists('lz_to_object')){
+	function lz_is_date($date, $format = 'Y-m-d H:i:s')
+	{
+		$d = DateTime::createFromFormat($format, $date);
+		return $d && $d->format($format) == $date;
+	}
+}
 osc_add_hook( 'admin_menu_init', 						'lz_dashboard_admin_menu_init');
 
 osc_register_plugin(osc_plugin_path(__FILE__), 			'lz_dashboard_install');

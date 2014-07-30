@@ -46,6 +46,14 @@ class LzDashboardLogHelper extends LzHelper {
 		return self::$instance;
 	}
 
+	/**
+	 * Log messages to dashboard logger it can be viewed in the logs tab
+	 * 
+	 * @param string $type Log type ( WARN,INFO,ERROR )
+	 * @param string $msg Message to log
+	 * @param string $group group name
+	 * @return boolean
+	 */
 	public function log( $type, $msg, $group = 'general'){
 		if( $this->debug ){
 			$method = 'log'.ucfirst(strtolower($type));

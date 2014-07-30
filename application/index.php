@@ -9,8 +9,6 @@ $plugin = Params::getParam('plugin');
 if( Params::existParam('route')
 	&& ( Params::getParam('route') == 'lz_dashboard/do'
 		|| Params::getParam('route') == 'lz_dashboard/user/do') ){
-	
-	$action = implode('/', explode('-',$action));
 
 	$params = Params::getParam('params');
 	
@@ -23,6 +21,15 @@ if( Params::existParam('route')
 		unset($_REQUEST['params']);
 	}
 } 
+
+$act = explode('-',$action);
+
+if( isset($act[1])){
+	$action = $act[0];
+	for($i=1;$i<count($act);$i++){
+		$action .= ucfirst(strtolower($act[$i]));
+	}
+}
 
 if( empty($action)){
 	$action = 'dashboard';

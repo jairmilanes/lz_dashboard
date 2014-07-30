@@ -74,8 +74,8 @@ class LzDashboardLoaderHelper extends LzHelper {
 	/**
 	 * Loads a specific object
 	 *
-	 * @param string $filename
 	 * @param string $classname
+	 * @param array $params
 	 * @param boolean $ignore_plugin
 	 * @return object|boolean
 	 */
@@ -88,6 +88,7 @@ class LzDashboardLoaderHelper extends LzHelper {
 			$class .= 'LzDashboard';
 		}
 		$class .= ucfirst(strtolower($classname));
+
 		if( class_exists($class, true)){
 			return new $class($params);
 		}

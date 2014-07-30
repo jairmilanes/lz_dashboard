@@ -57,10 +57,6 @@ class LzController {
 		$this->plugin = $plugin;
 		
 		$this->load();
-		
-		
-		//var_dump($this->load()->helper('config', true));exit;
-		
 		$this->config = $this->loader->helper('config', true);
 
 		$this->logger = $this->loader->helper('log', true);
