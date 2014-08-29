@@ -74,10 +74,13 @@ class LzAutoloader {
 	public function objects($class){
 		if( preg_match('/^oLz.*/', $class) && !class_exists($class)){
 			foreach ($this->paths as $path ){
-				$file = $path.'/objects/'.$class.'.php';
-				if( file_exists($file)){
-					return require $file;
-					break;
+				$p = $path.'/objects';
+				if( file_exists($p)){
+					$file = $p.'/'.$class.'.php';
+					if( file_exists($file)){
+						return require $file;
+						break;
+					}
 				}
 			}
 		}
@@ -155,15 +158,17 @@ class LzAutoloader {
 	
 				foreach( $this->autoload_folders as $folder ){
 					$fullpath = $p.'/'.$folder;
-					$files = scandir($fullpath);
-						
-					if( !isset($this->files[$folder])){
-						$this->files[$plugin][$folder] = array();
-					}
-						
-					foreach( $files as $file ){
-						if( $file !== '.' && $file !== '..' ){
-							$this->files[$plugin][$folder][str_replace(self::EXT,'',$file)] = $fullpath;
+					if( file_exists($fullpath)){
+						$files = scandir($fullpath);
+							
+						if( !isset($this->files[$folder])){
+							$this->files[$plugin][$folder] = array();
+						}
+							
+						foreach( $files as $file ){
+							if( $file !== '.' && $file !== '..' ){
+								$this->files[$plugin][$folder][str_replace(self::EXT,'',$file)] = $fullpath;
+							}
 						}
 					}
 				}

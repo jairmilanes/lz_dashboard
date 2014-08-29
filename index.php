@@ -144,6 +144,7 @@ function lz_dashboard_do($action, $plugin, $params = array()){
 	if( !empty($controller)){
 		return $controller->$method($params);
 	}
+	
 	return false;
 }
 
