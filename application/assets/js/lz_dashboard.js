@@ -20,9 +20,7 @@ $(document).ready(function(){
 	});	
 	
 	$('#lz_dashboard .lz_tabs li').eq(findSelectedTab()).find('a').trigger('click');
-	
-	
-	
+
 });
 var lz_active_form = '';
 function lz_init(){
@@ -91,14 +89,16 @@ function lz_init(){
 		
 		$('body').trigger( $(ui.newTab).data('form') );
 	});
-	
-	$('form', active_plugin_elem ).each( function(index, elem){
-		 $(elem).on('submit', function(e){
-		 	e.preventDefault();
-			formSubmit($(this));
-		 });
-	 });
 
+
+    /*
+    $('form', active_plugin_elem ).each( function(index, elem){
+        $(elem).on('submit', function(e){
+            e.preventDefault();
+            formSubmit($(this));
+        });
+    });
+    */
 	/***********************************************************
 	 * FORMS INIT
 	 **********************************************************/
@@ -191,12 +191,11 @@ function fields_init(elem){
 			$($elem).parent().addClass('toggle-dark');
 			
 			var id = 'switch_'+$($elem).attr( 'id' );
-			
-
 			var template = '<div id="'+id+'" data-checkbox="'+$($elem).attr( 'id' )+'"></div>';
 			
 			$($elem).before( template );
 			$($elem).css( 'display','none' );//.parent().find('label').css( 'display','none' );
+
 			var data = { 
 				checkbox: $($elem),
 				width:  85,  // ( ( $(elem).parent().width() / 100 ) * 28 ), // width used if not set in css
@@ -209,7 +208,8 @@ function fields_init(elem){
 				}
 			};
 			$('#'+id).toggles( data ).on('toggle', function (e, active) {
-				$($elem).prop('checked', active );
+                $($elem).prop('checked', ( active ? 'checked':'') );
+                $($elem).triggerHandler('lzsg.change',{checked: $($elem).is(':checked') });
 			});
 		});
 	 }
@@ -314,6 +314,59 @@ function fields_init(elem){
 			$(elem).buttonset();
 		});
 	 }
+
+    if( $('[data-depend]').length ){
+        $('[data-depend]').each( function(index, el){
+
+            var container = $(el).closest('.form-group').hide(),
+                depend = $(el).data('depend'),
+                field = $('[name$="['+depend[0]+']"]').eq(0),
+                event = 'change';
+
+                if( !field.length ){
+                    field = $('[name$="['+depend[0]+'][]"]').eq(0);
+                }
+
+
+            switch(field.attr('type')){
+                case 'text':
+                case 'textarea':
+                    event = 'blur';
+                    break;
+            }
+
+            if( field.hasClass('toggleSwitch') ){
+
+                field.on('lzsg.change', function(e, data){
+                    var check = $(this).is(':checked');
+                    depend[1].forEach(function(element, index, array){
+                        if( data.checked && element == field.val()){
+                            container.addClass('active').slideDown('fast');
+                            $(el).removeAttr('disabled');
+                        } else {
+                            container.removeClass('active').slideUp('fast');
+                            $(el).prop('disabled','disabled');
+                        }
+                    });
+                });
+                field.triggerHandler('lzsg.change',{ checked: field.is(':checked') });
+
+            } else {
+
+                field.on(event, function(e){
+                    if($.inArray(elem.val(),depend[1]) > -1 ) {
+                        container.addClass('active').slideDown('fast');
+                        $(el).removeAttr('disabled');
+                    } else {
+                        container.removeClass('active').slideUp('fast');
+                        $(el).prop('disabled','disabled');
+                    }
+                });
+                field.triggerHandler(event);
+            }
+
+        });
+    }
 	
 	table_init(elem);
 }
@@ -354,8 +407,9 @@ function action_init(elm, table){
 	var url 		= self.attr('href');
 	var method 		= self.data('method');
 	var bconfirm 	= self.data('confirm');
+    var type 	    = self.data('type');
 	
-	self.off('click').on('click', function(e){
+	self.off('click').off('click').on('click', function(e){
 		e.preventDefault();
 		show_loading();
 
@@ -412,35 +466,7 @@ function action_init(elm, table){
 						 $this.dialog( "close" );
 						 table.trigger(trigger);
 					 });
-					 
-					 
-					 /*
-					 var data = $this.find('form').serialize();
-					 var url = $this.find('form').attr('action');
-
-					 $.post(url, data, function(json){
-						if( json.status ){
-							showMessage( 'ok', json.message, $this );
-							clearErrors($this);
-							setTimeout(function(){
-								$this.dialog( "close" );
-							},1300);
-							//console.log(table);
-							//console.log(trigger);
-							table.trigger(trigger);
-						} else {
-							if( json.errors ){
-								setErrors(json.errors, $this);
-							}
-							showMessage( 'error', json.message, $this );
-						}
-						hide_loading();
-					 },'json');
-					 */
-					 
 				 }
-
-				 
 			});
 			
 			dialog.find('input, textarea, select').each(function(index, elem){
@@ -461,13 +487,23 @@ function action_init(elm, table){
 		}
 		
 		var type = self.data('type');
-		if( form ){
+
+		if( form && !type ){
+            type = 'ajax';
+        }
+        /*
+        if( form ){
 			type = 'ajax';	
 		}
+		*/
+
 		switch( type ){
 			case 'ajax':
 				if( form ){
-					$('form[name="'+form+'"]').trigger('submit');
+                    $('form[name="'+form+'"]').off('submit').on('submit', function(e){
+                        e.preventDefault();
+                        formSubmit($(this));
+                    }).trigger('submit');
 				} else {
 					if( method == 'post' ){
 						post(url, 'json');
@@ -484,6 +520,29 @@ function action_init(elm, table){
 					get(url, 'html');
 				}
 				break;
+            case 'blank':
+                $('form[name="'+form+'"]').submit();
+                var trigger = $('form[name="'+form+'"]').find('input[name="trigger"]').val();
+                if( trigger ){
+                    $('form[name="'+form+'"]').trigger( trigger );
+                }
+                hide_loading();
+                break;
+            case 'download_link':
+                console.log(!$('iframe#download_link_frame').length);
+                if( !$('iframe#download_link_frame').length ){
+                    var iframe = $('<iframe id="download_link_frame" style="display: none;"/>');
+                        iframe[0].name = 'download_link_frame';
+                        iframe[0].src = '#';
+                        iframe.appendTo('body');
+                }
+                console.log(iframe);
+
+                $('form[name="'+form+'"]').attr('target','download_link_frame').submit();
+                hide_loading();
+                return false;
+
+                break;
 		}
 	});
 }

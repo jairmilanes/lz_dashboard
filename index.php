@@ -52,7 +52,7 @@ require LZ_DASHBOARD_LIB_PATH."helpers/upload.helper.php";
  * ROUTES
 ******************************************************/
 osc_add_route('lz_dashboard/index', 'lz_dashboard/index', 'lz_dashboard/index', osc_plugin_folder(__FILE__).'application/index.php', false );
-osc_add_route('lz_dashboard/do', 'lz/do/([^/]+)/([/]+)/(.+)', 'lz/do/{plugin}/{do}/{params}', osc_plugin_folder(__FILE__).'application/index.php', false);
+osc_add_route('lz_dashboard/do', 'lz/do/([^/]+)/(.+[/]+)/(.+)', 'lz/do/{plugin}/{do}/{params}', osc_plugin_folder(__FILE__).'application/index.php', false);
 osc_add_route('lz_dashboard/user/do', 'lz/user/do/([^/]+)/(.*)/(.*)', 'lz/user/do/{plugin}/{do}/{params}', osc_plugin_folder(__FILE__).'application/index.php', true);
 /********************************************************************************
  * CORE HOOKS
@@ -61,9 +61,8 @@ osc_add_route('lz_dashboard/user/do', 'lz/user/do/([^/]+)/(.*)/(.*)', 'lz/user/d
  * LZ Dashboard admin header
  */
 function lz_dashboard_header(){
-	
 	osc_enqueue_script('footable');
-	//osc_enqueue_script('footable-paginate');
+	osc_enqueue_script('footable-paginate');
 	osc_enqueue_script('footable-filter');
 	osc_enqueue_script('footable-sort');
 	osc_enqueue_script('footable-template');
@@ -171,13 +170,15 @@ function lz_dashboard_url($do, $plugin, $params = array()){
 
 function lz_dashboard_get_action( $action, $plugin ){
 	$className = 'LzDashboard';
-	if( $plugin !== 'lz_dashboard' ){
+
+	if( $action !== 'uploads' && $plugin !== 'lz_dashboard' ){
 		if( !empty($plugin) ){
 			$className = implode('', array_map( 'ucfirst', explode('_', $plugin) ) );
 		}
-		$className .= ucfirst($action);
 	}
+    $className .= ucfirst($action);
 	$className .= 'Controller';
+
 	return new $className();
 }
 
@@ -189,17 +190,7 @@ function lz_dashboard_get_action( $action, $plugin ){
  * @return boolean
  */
 function lz_dashboard_unistall_plugin($plugin, $drops = array() ){
-	$current_data = osc_get_preference('lz_plugins', 'lz_dashboard');
-	if( !empty($current_data)){
-		$current_data = unserialize($current_data);
-		if( isset($current_data[$plugin])){
-			unset($current_data[$plugin]);
-		}
-	} else {
-		$current_data = array();
-	}
-	
-	if( osc_set_preference('lz_plugins', serialize($current_data), 'lz_dashboard') ){
+	if( lz_dashboard_unregister($plugin) ){
 		if( !empty($drops) ){
 			$connection = DBConnectionClass::newInstance() ;
 			$var 		= $connection->getOsclassDb();
@@ -214,9 +205,10 @@ function lz_dashboard_unistall_plugin($plugin, $drops = array() ){
 }
 
 /**
- * Resgister a plugin to use the dashboard.
+ * Resgister a plugin to use the dashboard, also imports a plugins sql file given it´s name
  *
- * @param unknown $data
+ * @param string $name
+ * @param string $sql_file
  * @return boolean
  */
 function lz_dashboard_register( $name, $sql_file = '' ){
@@ -237,19 +229,42 @@ function lz_dashboard_register( $name, $sql_file = '' ){
 	
 	if( osc_set_preference( 'lz_plugins', $current_data, 'lz_dashboard' ) ){
 		if( !empty($sql_file)){
-			$connection = DBConnectionClass::newInstance() ;
-			$var 		= $connection->getOsclassDb();
-			$conn       = new DBCommandClass( $var ) ;
-			$path 		= osc_plugin_resource($name.'/'.$sql_file);
-			$sql 		= file_get_contents($path);
-			
-			if( !$conn->importSQL($sql) ){
-				throw new Exception( $conn->getErrorLevel().' - '.$conn->getErrorDesc() ) ;
-			}
-		}	
-		return true;
+            $path 		= osc_plugin_resource($name.'/'.$sql_file);
+            if( file_exists($path) ){
+
+                $sql 		= file_get_contents($path);
+                $model = new DAO();
+                $model->dao->query('START TRANSACTION');
+                if( !$model->dao->importSQL($sql)){
+                    $model->dao->query('ROLLBACK');
+                    throw new Exception( "Error importSQL::LZCategoryPage<br>".$path );
+                }
+                $model->dao->query('COMMIT');
+
+            } else {
+                throw new Exception( "Error importSQL::LZCategoryPage<br>".$path );
+            }
+		}
+        return true;
 	}
 	return false;
+}
+
+function lz_dashboard_unregister($plugin){
+    $current_data = osc_get_preference('lz_plugins', 'lz_dashboard');
+    try {
+        $current_data = unserialize($current_data);
+        if( isset($current_data[$plugin])){
+            unset($current_data[$plugin]);
+        }
+    } catch(Exception $e){
+        return false;
+    }
+    if( osc_set_preference('lz_plugins', serialize($current_data), 'lz_dashboard') ){
+        return true;
+    }
+
+    return false;
 }
 
 function lz_get_plugin_path($name){

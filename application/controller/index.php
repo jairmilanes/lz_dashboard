@@ -2,7 +2,7 @@
 class LzDashboardIndexController extends LzController {
 
 	public function __construct(){
-		parent::__construct();
+		parent::__construct('lz_dashboard');
 	}
 
 	public function index(){

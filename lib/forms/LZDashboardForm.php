@@ -151,6 +151,41 @@ class LZDashboardForm
         return new self($name,$action, $submit_value, $html5, $method, $sticky, $message_type, $format, $multiple_errors);
     }
     */
+
+    /**
+     * Set the name of the form
+     *
+     * @param string $name
+     */
+    public function setName($name){
+        $this->name = $name;
+    }
+
+    /**
+     * Get form name
+     *
+     * @return string
+     */
+    public function getName(){
+        return $this->name;
+    }
+
+    /**
+     * Get form method
+     *
+     * @return string
+     */
+    public function getMethod(){
+        return $this->method;
+    }
+
+    public function setGroup($group){
+        $this->group = $group;
+    }
+
+    public function getGroup(){
+        return $this->group;
+    }
     
     public function setDo($do){
     	$this->do = $do;
@@ -181,6 +216,41 @@ class LZDashboardForm
     public function hasTrigger(){
     	return ( empty($this->trigger ) ? false : true );
     }
+
+    /**
+     * Add data to populate the form
+     *
+     * @param array $data
+     *
+     **/
+    public function addData(array $data){
+        $this->data = array_merge($this->data, $data);
+    }
+
+    /**
+     * Gets the current form data array
+     *
+     * @return array
+     */
+    public function getData(){
+        return $this->data;
+    }
+
+    /**
+     * Gets a existing field instance by name
+     *
+     * @param string $name
+     * @return bool
+     */
+    public function getField($name){
+        if( isset($this->fields->$name)){
+            return $this->fields->$name;
+        }
+        return false;
+    }
+
+
+
 
     /**
      * Add a field to the form instance
@@ -293,7 +363,7 @@ class LZDashboardForm
     		return false;
     	}
     
-    	$field = $this->getFieldTypeInstance( $type, $attributes['label'], $attributes );
+    	$field = $this->getFieldTypeInstance( $type, $label, $attributes );
     	
     	return $field;
     }
@@ -317,53 +387,37 @@ class LZDashboardForm
     }
 
     /**
-     * Set the name of the form
+     * Gets a specific field HTML string from the field class
      *
      * @param string $name
-     */
-    public function setName($name){
-        $this->name = $name;
-    }
-
-    /**
-     * Get form name
+     * @param string $key
      *
      * @return string
      */
-    public function getName(){
-        return $this->name;
+    private function getFieldData($name, $key)
+    {
+        if (!$this->checkField($name)) {
+            return false;
+        }
+        $field = $this->fields->$name;
+        if (isset($this->data[$name])) {
+            $field = $field->returnField($this->name, $name, $this->data[$name], $this->group );
+        } else {
+            $field = $field->returnField($this->name, $name, '', $this->group );
+        }
+        return $field[$key];
     }
 
-    /**
-     * Get form method
-     *
-     * @return string
-     */
-    public function getMethod(){
-        return $this->method;
+    protected function getFormat($name){
+        $format_class = 'LzFormat'.ucfirst(strtolower($name));
+        if( class_exists($format_class)){
+            $format = new $format_class;
+            return $format;
+        }
+        throw new \Exception('Format class not found!');
     }
 
-    public function setGroup($group){
-    	$this->group = $group;
-    }
-    
-    public function getGroup(){
-    	return $this->group;
-    }
 
-    /**
-     * Add data to populate the form
-     *
-     * @param array $data
-     *
-     **/
-    public function addData(array $data){
-        $this->data = array_merge($this->data, $data);
-    }
-   
-    public function getData(){
-    	return $this->data;
-    }
     
 
     /**
@@ -399,28 +453,6 @@ class LZDashboardForm
         }
         
         return ( false !== $returnData && $this->valid )? $form_data : $this->valid;
-    }
-    
-    /**
-     * Gets a specific field HTML string from the field class
-     *
-     * @param string $name
-     * @param string $key
-     *
-     * @return string
-     */
-    private function getFieldData($name, $key)
-    {
-    	if (!$this->checkField($name)) {
-    		return false;
-    	}
-    	$field = $this->fields->$name;
-    	if (isset($this->data[$name])) {
-    		$field = $field->returnField($this->name, $name, $this->data[$name], $this->group );
-    	} else {
-    		$field = $field->returnField($this->name, $name, '', $this->group );
-    	}
-    	return $field[$key];
     }
 
     /**
@@ -483,14 +515,7 @@ class LZDashboardForm
 FORM;
     }
     
-    protected function getFormat($name){
-    	$format_class = 'LzFormat'.ucfirst(strtolower($name));
-    	if( class_exists($format_class)){
-    		$format = new $format_class;
-    		return $format;
-    	}
-    	throw new \Exception('Format class not found!');
-    }
+
 
     /**
      * Returns the HTML for a specific form field ususally in the form of input tags

@@ -38,38 +38,47 @@ class LzUploadHelper {
 	/**
 	 * Saves new uploaded files
 	 */
-	public function saveFile(){
+	public function saveFile( $type = 'image'){
 
 		$field_name = Params::getParam('field_name');
 		$group      = Params::getParam('group');
 		$uid        = Params::getParam('qquuid');
-		$files      = $this->getSessionFiles(); //Session::newInstance()->_get('lz_dashboard_ajaxfiles');
+		$files      = $this->getSessionFiles();
 
 		if( !empty($field_name) && !isset($files[$uid]) ){
 
 			$this->uploader = $this->getUploader();
-			
+
 			$original   = pathinfo( $this->uploader->getOriginalName() );
 			$filename   = $this->getUniqueFilename( $original['extension'] );
 
 			if( !file_exists( $this->getUploadPath() ) ){
-				@mkdir( $this->getUploadPath(), 0777 );
+				@mkdir( $this->getUploadPath(), 0777, true );
 			}
 
 			if( !file_exists( $this->getUploadThumbPath() ) ){
-				@mkdir( $this->getUploadThumbPath(), 0777 );
+				@mkdir( $this->getUploadThumbPath(), 0777, true );
 			}
 
 			$result = $this->uploader->handleUpload( $this->getUploadPath().$filename );
 
-			if( isset( $result['success'] ) && $result['success'] == true && $this->saveAndResize( $field_name, $group, $uid, $filename ) ){
-				$result['success'] = true;
-				$result['thumbnailUrl'] = osc_uploads_url( sprintf( LZ_DASHBOARD_SHORTNAME.'/thumbnails/%s/%s', $this->plugin, $filename) );
-				$result['uploadName'] = $filename;
+			if( isset( $result['success'] ) && $result['success'] == true ){
+                if( $type == 'image' && !$this->saveAndResize( $field_name, $group, $uid, $filename ) ){
+                    $result = array(
+                        'success' => false,
+                        'message' => _m('Could not save file.','lz_dashboard')
+                    );
+                } else {
+                    if( $type == 'image'){
+                        $result['thumbnailUrl'] = osc_uploads_url( sprintf( LZ_DASHBOARD_SHORTNAME.'/thumbnails/%s/%s', $this->plugin, $filename) );
+                    }
+                    $result['success'] = true;
+                    $result['uploadName'] = $filename;
+                }
 				return $result;
 			}
 		}
-		return 	$result = array('success' => false, 'message' => _m('File already exists, try another file or change the filename.','lz_theme_options') );
+		return 	$result = array('success' => false, 'message' => _m('File already exists, try another file or change the filename.','lz_dashboard') );
 	}
 
 	/**

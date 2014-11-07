@@ -45,7 +45,7 @@ class LzDashboardLoaderHelper extends LzHelper {
 		if( !empty($this->plugin) && !$ignore_plugin ){
 			$classname = implode('', array_map( 'ucfirst', explode('_', $this->plugin) ) );
 		}
-		$classname = $classname.ucfirst(strtolower($name)).'Helper';
+		$classname = $classname.$name.'Helper';
 		if( class_exists($classname, true) ){
 			return $classname::newInstance($this->plugin, $this );
 		}
@@ -154,7 +154,8 @@ class LzDashboardLoaderHelper extends LzHelper {
 	 * @return LzForm|boolean
 	 */
 	public function form_by_name($name, $group){
-		$options = $this->form($name);
+        $options = $this->form($name);
+
 		$form_group = $options->getFormByGroup($group);
 		if( !empty($form_group)){
 			return $form_group;

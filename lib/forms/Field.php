@@ -5,6 +5,13 @@ use Lib\Useful;
 
 abstract class Field
 {
+    protected $form;
+    protected $disabled;
+    protected $readonly;
+    protected $default;
+    protected $description;
+    protected $depend;
+
     public $custom_error = array();
     public $html = array(
         'open_field' => false,
@@ -12,12 +19,9 @@ abstract class Field
         'open_html' => false,
         'close_html' => false
     );
-    
-    protected $form;
-    protected $disabled;
-    protected $readonly;
-    protected $default;
-    protected $description;
+    public  $error = array();
+
+
 
     public function setForm($form){
         $this->form = $form;
@@ -41,6 +45,14 @@ abstract class Field
     	return $this->description;
     }
 
+    public function setDepend($depend){
+        $this->depend = $depend;
+        return $this;
+    }
+
+    public function getDepend(){
+        return $this->depend;
+    }
     /**
      * Return the current field, i.e label and input
      */

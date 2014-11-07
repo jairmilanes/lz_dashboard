@@ -12,9 +12,6 @@
 	</div>
 	<div class="lz_inner grid-row grid-100">
 		<div class="lz_container grid-row grid-100"></div>
-		<div class="lz_loading"><img src="<?php echo osc_plugin_url('lz_payments/assets/img').'img/loader32.gif'; ?>" /></div>
+		<div class="lz_loading"><img src="<?php echo osc_plugin_url('lz_dashboard/application/assets/img').'img/loader32.gif'; ?>" /></div>
 	</div>
 </div>
-<script>
-
-</script>

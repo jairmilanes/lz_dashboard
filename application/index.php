@@ -6,6 +6,8 @@ $method = '';
 $action = strtolower(Params::getParam('do'));
 $plugin = Params::getParam('plugin');
 
+
+
 if( Params::existParam('route')
 	&& ( Params::getParam('route') == 'lz_dashboard/do'
 		|| Params::getParam('route') == 'lz_dashboard/user/do') ){

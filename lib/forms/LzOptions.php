@@ -215,14 +215,24 @@ class LzOptions {
 		if( method_exists($this, $method)){
 			$field_instance = $this->$method( $options['type'],  $field,  $options['options'] );
 
-			if( method_exists($field_instance, 'setDefault') && isset($options['default'])){
+			if( isset($options['default'])){
 				$field_instance->setDefault($options['default']);
 			}
 			
-			if( method_exists($field_instance, 'setDescription') && isset($options['description'])){
-				$field_instance->setDescription($options['description']);
+			if( isset($options['description'])){
+                $field_instance->setDescription($options['description']);
 			}
-			
+
+            if( isset($options['depend']) ){
+                try{
+                    $depend_field = $options['depend'][0];
+                    $depend_value = $options['depend'][1];
+                    if( !empty($depend_field) && !empty($depend_value) ){
+                        $field_instance->setDepend($options['depend']);
+                    }
+
+                } catch(Exception $e){  }
+            }
 		}
 		
 		return $field_instance;
@@ -262,6 +272,12 @@ class LzOptions {
 			case 'googleFont':
 				$method = 'setOptionTypeOptions';
 				break;
+            case 'code':
+                $method = 'setOptionTypeCode';
+                break;
+            case 'html':
+                $method = 'setOptionTypeHtml';
+                break;
 			case 'toggleSwitch':
 				$method = 'setOptionTypeToggleSwitch';
 				break;
@@ -285,6 +301,9 @@ class LzOptions {
 				break;
 			case 'hidden':
 				$method = 'setOptionTypeHidden';
+				break;
+			case "categories":
+				$method = 'setOptionTypeCategories';
 				break;
 		}
 		return $method;
@@ -362,12 +381,16 @@ class LzOptions {
 	 * @param string $group_parent
 	 */
 	protected function setOptionTypeAjaxFile( $type, $title, array $attributes ){
+
 		return $this->form->createField( $title, $type, array(
 			'id'			=> 'field_'.strtolower( $title ),
 			'class' 		=> 'text_field '.@$attributes['class'],
 			'required' 		=> @$attributes['required'],
 			'label'			=> @$attributes['label'],
-			'value'			=> @$attributes['value']
+			'value'			=> @$attributes['value'],
+            'type'          => @$attributes['type'],
+            'mime'          => @$attributes['mime'],
+
 		));
 	}
 	
@@ -393,6 +416,46 @@ class LzOptions {
 			'option_size'   => @$attributes['option_size']
 		));
 	}
+
+
+    /**
+     * Creates a code display field using a textarea
+     *
+     * @param string $type
+     * @param string $title
+     * @param array $attributes
+     */
+    protected function setOptionTypeCode( $type, $title, array $attributes ){
+        return $this->form->createField( $title, $type, array(
+            'id'			=> 'field_'.strtolower( $title ),
+            'class' 		=> 'options_field '.@$attributes['class'],
+            'required' 		=> @$attributes['required'],
+            'disabled' 		=> @$attributes['disabled'],
+            'readonly' 		=> @$attributes['readonly'],
+            'label'			=> @$attributes['label'],
+            'value'			=> @$attributes['value']
+        ));
+    }
+
+    /**
+     * Creates a plain html code
+     *
+     * @param string $type
+     * @param string $title
+     * @param array $attributes
+     */
+    protected function setOptionTypeHtml( $type, $title, array $attributes ){
+        return $this->form->createField( $title, $type, array(
+            'id'			=> 'field_'.strtolower( $title ),
+            'class' 		=> 'options_field '.@$attributes['class'],
+            /*'required' 		=> @$attributes['required'],
+            'disabled' 		=> @$attributes['disabled'],
+            'readonly' 		=> @$attributes['readonly'],*/
+            'label'			=> @$attributes['label'],
+            'value'			=> @$attributes['value']
+        ));
+    }
+
 	
 	/**
 	 * Creates a page wrapper 
@@ -455,6 +518,24 @@ class LzOptions {
 				'id'			=> 'field_'.strtolower( $title ),
 				'class' 		=> 'hidden_field',
 				'required'		=> @$attributes['required']
+		));
+	}
+	
+	/**
+	 * Creates a categories select field
+	 *
+	 * @param string $type
+	 * @param string $title
+	 * @param array $data
+	 * @param string $group_slug
+	 * @param string $group_parent
+	 */
+	protected function setOptionTypeCategories( $type, $title, array $attributes ){
+		return $this->form->createField( $title, $type, array(
+				'id'			=> 'field_'.strtolower( $title ),
+				'class' 		=> 'text_field',
+				'label'			=> @$attributes['label'],
+				'title'			=> @$attributes['title']
 		));
 	}
 	

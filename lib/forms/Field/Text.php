@@ -28,7 +28,6 @@ class Text extends Field
             $this->content = $attributes['content'];
         }
         $this->attributes = $attributes;
-        //printR( $this->attributes, true);
     }
 
     public function attributeString()
@@ -55,7 +54,22 @@ class Text extends Field
         return array(
             'messages' => !empty($this->custom_error) && !empty($this->error) ? $this->custom_error : $this->error,
             'label' => $this->label === false ? false : sprintf('<label for="%s_%s_%s" class="%s">%s</label>', $form_name, $group, $name, $this->class, $this->label),
-            'field' => sprintf('<input type="%1$s" name="%6$s[%7$s][%2$s]" id="%6$s_%7$s_%2$s" value="%3$s" %4$s class="%5$s form-control"/>', $this->field_type, $name, $value, $this->attribute_string, $this->class, $form_name, $group ),
+            'field' => sprintf(
+                '<input
+                    type="%1$s"
+                    name="%6$s[%7$s][%2$s]"
+                    id="%6$s_%7$s_%2$s"
+                    value="%3$s" %4$s
+                    class="%5$s form-control" %8$s />',
+                $this->field_type,
+                $name,
+                $value,
+                $this->attribute_string,
+                $this->class,
+                $form_name,
+                $group,
+                (!empty($this->depend)? "data-depend='".json_encode($this->getDepend())."' ": "")
+            ),
             'html' => $this->html
         );
     }

@@ -35,6 +35,9 @@ class LzController {
 	 * @var unknown
 	 */
 	protected $logger;
+
+
+    protected $params;
 	
 	/**
 	 * Short name of the current plugin
@@ -51,18 +54,31 @@ class LzController {
 	/**
 	 * Controller class constructor
 	 */
-	public function __construct($plugin){
+	public function __construct($plugin = null){
 		require_once LZ_DASHBOARD_APP_PATH.'helper/loader.php';
 		$this->data   = array();
+
+        if( empty($plugin)){
+            $plugin = 'lz_dashboard';
+        }
+
 		$this->plugin = $plugin;
 		
-		$this->load();
-		$this->config = $this->loader->helper('config', true);
+		if( $this->load() ){
+            $this->config = $this->loader->helper('config', true);
 
-		$this->logger = $this->loader->helper('log', true);
-		$this->logger->setDebug($this->debug);
-		
-		Session::newInstance()->_set('plugin', $this->plugin);
+            $this->logger = $this->loader->helper('log', true);
+            $this->logger->setDebug($this->debug);
+
+            Session::newInstance()->_set('plugin', $this->plugin);
+        }
+
+        $this->params = array();
+        if( Params::existParam('lzds') ){
+            $p = Params::getParam('lzds');
+            $this->params = !empty($p)? $p:array();
+        }
+
 		return true;
 	}
 
@@ -143,7 +159,10 @@ class LzController {
 	 */
 	protected function setPlugin($plugin) {
 		$this->plugin = $plugin;
-		return $this;
+        if( $this->load() ){
+            return $this;
+        }
+        return false;
 	}
 	
 	/**
@@ -152,6 +171,10 @@ class LzController {
 	 * @return LzDashboardLoaderHelper
 	 */
 	protected function load(){
+        if( empty($this->plugin)){
+            return false;
+        }
+
 		if( !$this->loader instanceof LzDashboardLoaderHelper){
 			$this->loader = LzDashboardLoaderHelper::newInstance($this->plugin);
 		}

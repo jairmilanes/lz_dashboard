@@ -32,7 +32,7 @@
 		data-filter-minimum="3"
 		data-filter="<?php echo '#'.$data->name; ?>_hidden_action .table_filter .filter"
 		data-page-navigation="<?php echo '#'.$data->name; ?>_table_action .pagination"
-		data-page-size="15"
+		data-page-size="30"
 		data-sort-initial="acsending">
 		  <thead>
 			    <tr>
@@ -73,7 +73,7 @@
 	</div>
 </div>
 <div id="<?php echo $data->name; ?>_table_action" class="dashboard_action">
-	<div class="pagination"></div>
+	<div class="pagination hide-if-no-paging"></div>
 	
 	<?php
 	if( is_array($action_buttons) ){
