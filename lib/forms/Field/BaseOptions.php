@@ -1,4 +1,5 @@
 <?php
+
 namespace Lib\Field;
 
 use Lib\Field;

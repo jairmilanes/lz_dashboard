@@ -14,8 +14,17 @@ class Select extends Options
     {
         $field = sprintf('<select name="%2$s[%3$s][%1$s]" id="%2$s_%3$s_%1$s">', $name, $form_name,$group);
         foreach ($this->options as $key => $val) {
-            $attributes = $this->getAttributeString($val);
-            $field .= sprintf('<option value="%s" %s>%s</option>', $key, ((string) $key === (string) $value ? 'selected="selected"' : '') . $attributes['string'], $attributes['val']);
+            if( isset($val['options']) ){
+                $field .= '<optgroup label="'.$key.'">';
+                foreach ($val['options'] as $group_key => $group_val) {
+                    $attributes = $this->getAttributeString($group_val);
+                    $field .= sprintf('<option value="%s" %s>%s</option>', $group_key, ((string) $group_key === (string) $value ? 'selected="selected"' : '') . $attributes['string'], $attributes['val']);
+                }
+                $field .= '</optgroup>';
+            } else {
+                $attributes = $this->getAttributeString($val);
+                $field .= sprintf('<option value="%s" %s>%s</option>', $key, ((string) $key === (string) $value ? 'selected="selected"' : '') . $attributes['string'], $attributes['val']);
+            }
         }
         $field .= '</select>';
         $class = !empty($this->error) ? 'error choice_label' : 'choice_label';

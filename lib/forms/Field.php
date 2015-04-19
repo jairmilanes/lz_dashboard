@@ -22,7 +22,6 @@ abstract class Field
     public  $error = array();
 
 
-
     public function setForm($form){
         $this->form = $form;
     }
